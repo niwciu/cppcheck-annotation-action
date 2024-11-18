@@ -52,7 +52,7 @@ inputs:
     default: "warning"
     required: false
   action-fail-level:
-    description: "Comma-separated severities of annotations that should lead to fail status for running this action. Possible values: notice, warning, failure"
+    description: "Comma-separated severities of annotations that should lead to a failure status when running this action. Possible values: notice, warning, failure"
     default: ""
     required: false
 
