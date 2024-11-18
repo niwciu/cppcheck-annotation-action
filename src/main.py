@@ -102,6 +102,7 @@ def main():
     if cppcheckResult.returncode != 0:
         print("STDOUT:\n ", cppcheckResult.stdout.decode("utf-8"))
         print("STDERR:\n ", cppcheckResult.stderr.decode("utf-8"))
+        return cppcheckResult.returncode
         
 
     annotations = parse_cppcheck_xml(OUTPUT_FILE)
