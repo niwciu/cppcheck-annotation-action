@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import xml.etree.ElementTree as ElementTree
 import json
@@ -16,6 +17,7 @@ INPUT_ANNOTATION_WARNINGS = os.getenv("INPUT_ANNOTATION-WARNINGS")
 INPUT_ANNOTATION_NOTICES = os.getenv("INPUT_ANNOTATION-NOTICES")
 INPUT_ANNOTATION_FAILURES = os.getenv("INPUT_ANNOTATION-FAILURES")
 INPUT_ANNOTATION_LEVEL_DEFAULT = os.getenv("INPUT_ANNOTATION-LEVEL-DEFAULT")
+INPUT_ACTION_FAIL_LEVEL = os.getenv("INPUT_ACTION-FAIL-LEVEL")
 
 # Constants
 EXECUTABLE = "cppcheck"
@@ -83,6 +85,14 @@ def parse_cppcheck_xml(reportFile):
         })
     return annotations
 
+def get_action_status(reportFile):
+    root = ElementTree.parse(reportFile).getroot()
+    errors = root.find("errors").findall("error")
+    for error in errors:
+        annotation_level = get_annotation_level(error.get("severity"))
+        if annotation_level in INPUT_ACTION_FAIL_LEVEL.split(","):
+            return -1
+    return 0
 
 def main():
     command = (EXECUTABLE, *get_args())
@@ -92,11 +102,15 @@ def main():
     if cppcheckResult.returncode != 0:
         print("STDOUT:\n ", cppcheckResult.stdout.decode("utf-8"))
         print("STDERR:\n ", cppcheckResult.stderr.decode("utf-8"))
-        return cppcheckResult.returncode
+        
 
     annotations = parse_cppcheck_xml(OUTPUT_FILE)
     print(json.dumps(annotations, indent=2), file=open(INPUT_JSON_RESULTS_FILE, "w"))
-
+    
+    if INPUT_ACTION_FAIL_LEVEL != "":
+        return get_action_status(OUTPUT_FILE)
+    else:
+        return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
