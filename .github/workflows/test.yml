@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
   pull_request:
 
 jobs:
@@ -11,7 +12,7 @@ jobs:
     name: cppcheck-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Run cppcheck-annotation-action
         uses: ./
@@ -25,7 +26,41 @@ jobs:
           annotation-warnings: style
 
       - name: Set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
+
+      - name: Run tests
+        run:
+          python src/tests.py
+  build_and_test_fail_functionality:
+    name: cppcheck-fail-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run cppcheck-annotation-action
+        id: runt_to_fail
+        continue-on-error: true
+        uses: ./
+        with:
+          log-level: 'verbose'
+          std: 'c++14'
+          platform: 'unix64'
+          suppress: missingIncludeSystem
+          sources: tests
+          annotation-failures: error
+          annotation-warnings: style
+          action-fail-level: failure
+
+      - name: Report action fail status correctness
+        if: steps.runt_to_fail.outcome == 'failure'
+        run: exit 0
+
+      - name: Report if action not fail - wrong behaviour
+        if: steps.runt_to_fail.outcome == 'success'
+        run: exit 1
+        
+      - name: Set up python
+        uses: actions/setup-python@v5
 
       - name: Run tests
         run:
